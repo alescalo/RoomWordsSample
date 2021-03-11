@@ -13,6 +13,7 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.lifecycle.ViewModelProviders;
 import androidx.lifecycle.ViewModelStoreOwner;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -51,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
         recyclerView.setAdapter(adapter);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        mWordViewModel = new ViewModelProvider(this).get(WordViewModel. class);
+        mWordViewModel = new ViewModelProvider(this).get(WordViewModel.class);
 
         mWordViewModel.getAllWords().observe(this, new Observer<List<Word>>() {
             @Override
@@ -61,7 +62,31 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        // Add the functionality to swipe items in the
+        // recycler view to delete that item
+        ItemTouchHelper helper = new ItemTouchHelper(
+                new ItemTouchHelper.SimpleCallback(0,
+                        ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+                    @Override
+                    public boolean onMove(RecyclerView recyclerView,
+                                          RecyclerView.ViewHolder viewHolder,
+                                          RecyclerView.ViewHolder target) {
+                        return false;
+                    }
 
+                    @Override
+                    public void onSwiped(RecyclerView.ViewHolder viewHolder,
+                                         int direction) {
+                        int position = viewHolder.getAdapterPosition();
+                        Word myWord = adapter.getWordAtPosition(position);
+                        Toast.makeText(MainActivity.this, "Deleting " +
+                                myWord.getWord(), Toast.LENGTH_LONG).show();
+
+                        // Delete the word
+                        mWordViewModel.deleteWord(myWord);
+                    }
+                });
+        helper.attachToRecyclerView(recyclerView);
     }
 
     @Override
@@ -73,13 +98,15 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.clear_data) {
+            // Add a toast just for confirmation
+            Toast.makeText(this, "Clearing the data...",
+                    Toast.LENGTH_SHORT).show();
+
+            // Delete the existing data
+            mWordViewModel.deleteAll();
             return true;
         }
 
@@ -99,4 +126,6 @@ public class MainActivity extends AppCompatActivity {
                     Toast.LENGTH_LONG).show();
         }
     }
+
+
 }
